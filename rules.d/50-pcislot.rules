@@ -1,0 +1,1 @@
+ACTION=="add", SUBSYSTEM=="pci", PROGRAM="/usr/lib/udev/dmiprint -p %k", ENV{PCI_SLOT_DMINAME}="%c"
