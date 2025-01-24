@@ -222,7 +222,7 @@ int decode_dmi(int fd, ssize_t len, const struct pci_bdf qbdf) {
                 // old smbios, no BDF fields
                 continue;
             }
-            if ((slot_type >=0xA5 && slot_type <=0xb6) || slot_type == 0x06 || slot_type == 0x0e
+            if ((slot_type >=0xA5 && slot_type <=0xc6) || slot_type == 0x06 || slot_type == 0x0e
                 || slot_type == 0x12 || (slot_type >= 0x1f && slot_type <= 0x23)) {
 
                 unsigned char * p = ((unsigned char*) entry.start) + 0x0d;
