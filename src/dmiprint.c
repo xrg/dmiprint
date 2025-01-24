@@ -34,6 +34,7 @@ struct sm_entry {
 };
 
 struct pci_bdf {
+    int all;
     uint16_t segment;
     unsigned char bus, dev, fn;
 };
@@ -217,7 +218,6 @@ int decode_dmi(int fd, ssize_t len, const struct pci_bdf qbdf) {
             if (slot_name_pos && slot_name_pos < 255)
                 slot_name = entry.strings[slot_name_pos-1];
 
-
             if (entry.len < 0x10) {
                 // old smbios, no BDF fields
                 continue;
@@ -236,7 +236,13 @@ int decode_dmi(int fd, ssize_t len, const struct pci_bdf qbdf) {
                 DEBUG("PCI slot '%s' found! S.BDF = %04x.%02x:%02x.%x",
                       slot_name, bdf.segment, bdf.bus, bdf.dev, bdf.fn);
 
-                if ((bdf.bus == qbdf.bus) && (bdf.segment == qbdf.segment)
+                if (qbdf.all) {
+                    printf("%04x.%02x:%02x.%x\t%s\n",
+                           bdf.segment, bdf.bus, bdf.dev, bdf.fn, slot_name);
+                    /* with --all any type 9 entry will be a good result */
+                    ret = 0;
+                }
+                else if ((bdf.bus == qbdf.bus) && (bdf.segment == qbdf.segment)
                     && (bdf.dev == qbdf.dev) && (bdf.fn == qbdf.fn)) {
                     printf("%s", slot_name);
                     ret = 0;
@@ -266,6 +272,7 @@ int main(int argc, char **argv) {
         {"entry-point", required_argument, 0,  'e' },
         {"dmi-table", required_argument, 0, 'd'},
         {"pci", required_argument, 0, 'p'},
+        {"all", no_argument, 0, 'a'},
         {"verbose", no_argument, 0, 'v' },
         {0,         0,           0,  0 }
     };
@@ -275,7 +282,7 @@ int main(int argc, char **argv) {
     int fd = -1;
     struct pci_bdf qbdf = {0};
 
-    while ((opt = getopt_long(argc, argv, "e:d:p:v", long_options, &option_index)) != -1) {
+    while ((opt = getopt_long(argc, argv, "e:d:p:av", long_options, &option_index)) != -1) {
         switch (opt) {
         case 'e':
             ep_fname = optarg;
@@ -286,7 +293,14 @@ int main(int argc, char **argv) {
         case 'v':
             do_debug = 1;
             break;
+        case 'a':
+            qbdf.all = 1;
+            break;
         case 'p':
+            if (qbdf.all) {
+                fprintf(stderr, "Option -p is incompatible with -a\n");
+                exit(EXIT_FAILURE);
+            }
             if (sscanf(optarg, "%4hx:%2hhx:%2hhx.%hhx",
                     &qbdf.segment, &qbdf.bus, &qbdf.dev, &qbdf.fn) < 4) {
                 fprintf(stderr, "ERROR: invalid sBDF: %s\n", optarg);
@@ -294,7 +308,7 @@ int main(int argc, char **argv) {
             }
             break;
         default: /* '?' */
-            fprintf(stderr, "Usage: %s [-e smbios_entry_point] [-d DMI] -p PCI_BDF\n",
+            fprintf(stderr, "Usage: %s [-e smbios_entry_point] [-d DMI] {-p PCI_BDF|-a}\n",
                     argv[0]);
             exit(EXIT_FAILURE);
         }
