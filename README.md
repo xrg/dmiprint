@@ -2,13 +2,14 @@
 
 A minimal SMBIOS (aka. DMI) decoder, purposed to print the "designator" of
 PCIe slots in the system.
+Slot types of PCI (currently, as in SMBIOS(tm) v3.8.0) are hard-coded there.
 
 Explicitly barebone: won't decode anything else.
 
 Build:
 
-Just use your C compiler:
 ```
-    gcc -o dmiprint -O2 src/dmiprint.c
+    cd src
+    make dmiprint
 ```
 
