@@ -40,7 +40,6 @@ struct pci_bdf {
 };
 
 struct sm_header read_entrypoint(int fd) {
-    int rlen = 0;
     struct sm_header ret = {0};
     char buf[64];
     char *p = buf;
@@ -95,7 +94,7 @@ struct sm_header read_entrypoint(int fd) {
         fprintf(stderr, "ERROR: cannot read remaining entry point\n");
         goto BAD_HEADER;
     }
-    DEBUG("ep pos = %d, len=%d", (p - buf), ep_len);
+    DEBUG("ep pos = %ld, len=%d", (p - buf), ep_len);
 #if 0
     if (do_debug) {
         for (char *d=buf; d<buf+ep_len; d++)
@@ -141,12 +140,8 @@ int decode_dmi(int fd, ssize_t len, const struct pci_bdf qbdf) {
     const char* pend = NULL;
     const char* pcur = NULL;
     struct sm_entry entry;
-    int n, o;
+    int n;
     int ret = 2;
-
-    static const char PCI_SLOT_TYPES[] = {
-        0x06, 0x0e, 0x12, 0x1f, 0x20, 0x21, 0x22, 0x23,
-    };
 
     if ((ptable = malloc(len+1)) == NULL) {
         fprintf(stderr, "ERROR: cannot alloc\n");
@@ -176,7 +171,7 @@ int decode_dmi(int fd, ssize_t len, const struct pci_bdf qbdf) {
         entry.len = *((unsigned char*) pcur++);
         entry.handle = le16toh(*((uint16_t*) pcur));
         if (entry.len < 4) {
-            fprintf(stderr, "ERROR: entry too short pos=%x (%x)\n",
+            fprintf(stderr, "ERROR: entry too short pos=%lx (%x)\n",
                     (pcur - (char*)ptable), entry.handle);
             goto BAD_TABLE;
         }
@@ -222,7 +217,7 @@ int decode_dmi(int fd, ssize_t len, const struct pci_bdf qbdf) {
                 // old smbios, no BDF fields
                 continue;
             }
-            if ((slot_type >=0xA5 && slot_type <=0xc6) || slot_type == 0x06 || slot_type == 0x0e
+            if ((slot_type >= 0xA5 && slot_type <= 0xc6) || slot_type == 0x06 || slot_type == 0x0e
                 || slot_type == 0x12 || (slot_type >= 0x1f && slot_type <= 0x23)) {
 
                 unsigned char * p = ((unsigned char*) entry.start) + 0x0d;
@@ -249,7 +244,7 @@ int decode_dmi(int fd, ssize_t len, const struct pci_bdf qbdf) {
                     break;
                 }
             } else {
-                DEBUG("Slot 0x%x found at %04x : %s", slot_type,
+                DEBUG("Slot 0x%x found at %04lx : %s", slot_type,
                     ((char*)entry.start - (char*)ptable), slot_name);
             }
         }
